@@ -1,0 +1,65 @@
+<?php
+
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        $tableNames = config('blogai.table_names');
+
+        if (empty($tableNames)) {
+            throw new \Exception('Error: config/blogai.php not loaded. Run [php artisan config:clear] and try again.');
+        }
+
+        Schema::create($tableNames['blog_article_topics'], function (Blueprint $table) {
+            $table->id();
+            $table->string('topic');
+            $table->longText('image_prompt')->nullable();
+            $table->boolean('is_approved')->default(false);
+            $table->boolean('is_created')->default(false);
+            $table->timestamps();
+        });
+
+        Schema::create($tableNames['blog_articles'], function (Blueprint $table) use ($tableNames) {
+            $table->id();
+            $table->unsignedBigInteger('blog_article_topic_id');
+            $table->string('slug')->unique();
+            $table->string('title');
+            $table->longText('preview_text')->nullable();
+            $table->longText('content')->nullable();
+            $table->longText('meta_title')->nullable();
+            $table->longText('meta_description')->nullable();
+            $table->longText('image_url')->nullable();
+            $table->longText('header_image_url')->nullable();
+            $table->longText('thumbnail_url')->nullable();
+            $table->boolean('is_public')->default(false);
+            $table->timestamps();
+
+            $table->foreign('blog_article_topic_id')
+                ->references('id')
+                ->on($tableNames['blog_article_topics'])
+                ->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        $tableNames = config('blogai.table_names');
+
+        if (empty($tableNames)) {
+            throw new \Exception('Error: config/blogai.php not found and defaults could not be merged. Please publish the package configuration before proceeding, or drop the tables manually.');
+        }
+
+        Schema::drop($tableNames['blog_article_topics']);
+        Schema::drop($tableNames['blog_articles']);
+    }
+};
